@@ -52,7 +52,7 @@ export default function EditTopicForm({ id, title, description }) {
       />
 
       <button className="bg-green-600 font-bold text-white py-3 px-6 w-fit">
-        Update Topic
+        Update Topic with aigle
       </button>
     </form>
   );
