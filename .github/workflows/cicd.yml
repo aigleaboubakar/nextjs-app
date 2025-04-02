@@ -24,11 +24,9 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin 
       - name: Pull image from docker hub
         run: docker pull aiglefouat/nextjs-app:latest
       - name: Delete old container
         run: docker rm -f nextjs-app-container  
       - name: Run docker container
-        run:  docker run -d -p 3000:3000 --name nextjs-app-container aiglefouat/nextjs-app
+        run: docker run -d -p 3000:3000 --name nextjs-app-container aiglefouat/nextjs-app 
