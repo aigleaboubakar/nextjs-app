@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -16,17 +17,28 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > id_rsa
           chmod 600 id_rsa
-        shell: bash
 
-      - name: Run remote commands
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/nextjs-app
+            cd /var/www || exit
+
+            if [ ! -d "nextjs-app/.git" ]; then
+              git clone git@github.com:TON_UTILISATEUR_GITHUB/nextjs-app.git nextjs-app
+            fi
+
+            cd nextjs-app || exit
             git pull origin main
-            docker compose build
-            docker compose down
-            docker compose up -d
+
+            if [ -f "docker-compose.yml" ]; then
+              docker compose build
+              docker compose down
+              docker compose up -d
+            else
+              echo "Fichier docker-compose.yml introuvable"
+              exit 1
+            fi
