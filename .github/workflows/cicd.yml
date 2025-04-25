@@ -3,43 +3,32 @@ name: Deploy Next.js app
 on:
   push:
     branches:
-      - main  # Déclenche l'action sur chaque push vers la branche principale (vous pouvez adapter à d'autres branches)
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Vérification du code source depuis GitHub
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Configuration de SSH pour la connexion à votre serveur
       - name: Set up SSH
-        uses: appleboy/ssh-action@v0.1.10
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Ajoutez la clé SSH de GitHub aux hôtes connus
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-            # Se rendre dans le répertoire du projet
-            cd /var/www || exit
-            # Cloner le dépôt si le dossier n'existe pas
-            if [ ! -d "nextjs-app/.git" ]; then
-              git clone git@github.com:AigleDev/nextjs-app.git nextjs-app
-            fi
-            # Se rendre dans le répertoire du projet
-            cd nextjs-app || exit
-            # Mettre à jour le projet depuis GitHub
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Set up known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Deploy to Server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cd /var/www/nextjs-app || exit
             git pull origin main
-            # Vérifier et démarrer avec Docker Compose
-            if [ -f "docker-compose.yml" ]; then
-              docker compose build
-              docker compose down
-              docker compose up -d
-            else
-              echo "Fichier docker-compose.yml introuvable"
-              exit 1
-            fi
+            docker compose build
+            docker compose down
+            docker compose up -d
+          EOF
