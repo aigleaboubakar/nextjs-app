@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextjs-app
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_PASSWORD_ENV=ton_mdp_mongo
+      - SITE_URL_ENV=https://ton_site.com
