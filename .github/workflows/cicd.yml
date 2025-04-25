@@ -1,39 +1,40 @@
-name: 🚀 Deploy to VPS
+name: Deploy Next.js app
 
 on:
   push:
     branches:
-      - main
+      - main  # Déclenche l'action sur chaque push vers la branche principale (vous pouvez adapter à d'autres branches)
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      # Vérification du code source depuis GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Setup SSH key
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > id_rsa
-          chmod 600 id_rsa
-
-      - name: Deploy via SSH
+      # Configuration de SSH pour la connexion à votre serveur
+      - name: Set up SSH
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: root
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # Ajoutez la clé SSH de GitHub aux hôtes connus
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            # Se rendre dans le répertoire du projet
             cd /var/www || exit
-
+            # Cloner le dépôt si le dossier n'existe pas
             if [ ! -d "nextjs-app/.git" ]; then
-              git clone git@github.com:TON_UTILISATEUR_GITHUB/nextjs-app.git nextjs-app
+              git clone git@github.com:AigleDev/nextjs-app.git nextjs-app
             fi
-
+            # Se rendre dans le répertoire du projet
             cd nextjs-app || exit
+            # Mettre à jour le projet depuis GitHub
             git pull origin main
-
+            # Vérifier et démarrer avec Docker Compose
             if [ -f "docker-compose.yml" ]; then
               docker compose build
               docker compose down
