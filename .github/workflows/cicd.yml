@@ -26,9 +26,13 @@ jobs:
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd /var/www/nextjs-app || exit
+            if [ ! -d /var/www/nextjs-app ]; then
+              git clone git@github.com:aigleaboubakar/nextjs-app.git /var/www/nextjs-app
+            fi
+            cd /var/www/nextjs-app
             git pull origin main
-            docker compose build
-            docker compose down
-            docker compose up -d
+            docker compose build || docker build -t nextjs-app .
+            docker compose down || docker stop $(docker ps -q) && docker rm $(docker ps -aq)
+            docker compose up -d || docker run -d -p 3000:3000 nextjs-app
           EOF
+
