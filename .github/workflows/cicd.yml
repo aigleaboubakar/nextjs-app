@@ -10,29 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Copy files to VPS
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "~/nextjs-app"
-
-      - name: Run deployment commands on VPS
-        uses: appleboy/ssh-action@v0.1.6
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/nextjs-app
-            echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" > .env
-            echo "SITE_URL=${{ secrets.SITE_URL }}" >> .env
-            docker stop nextjs-app-container || true
-            docker rm nextjs-app-container || true
-            docker build -t nextjs-app .
-            docker run -d --name nextjs-app-container -p 3000:3000 --env-file .env nextjs-app
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /var/www/nextjs-app
+          git pull origin main
+          docker compose build
+          docker compose down
+          docker compose up -d
